@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+groq
+mysql-connector-python
+python-dotenv
+sqlalchemy
+sqlglot
+scikit-learn
+pytz
+pandas
+numpy

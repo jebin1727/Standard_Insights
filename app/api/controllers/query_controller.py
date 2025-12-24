@@ -13,10 +13,9 @@ from app.utils.validators import validate_query_input
 class QueryController:
     def __init__(self):
         app_logger.info("Initializing QueryController")
-        # Initialize Schema RAG
-        schema_snippets = fetch_schema()
-        self.retriever = SchemaRetriever(schema_snippets)
-        app_logger.info(f"Schema retriever initialized with {len(schema_snippets)} schema snippets")
+        # We'll fetch schema dynamically for each query to ensure it's current
+        self.retriever = None
+        app_logger.info("Query controller initialized. Schema will be fetched dynamically for each query.")
 
     async def process_query(self, user_query: str) -> Dict[str, Any]:
         """
@@ -34,19 +33,32 @@ class QueryController:
             }
         
         try:
-            # 1. Retrieve relevant schema (RAG)
-            relevant_schema = self.retriever.retrieve(user_query, k=3)
+            # 1. Fetch current schema and create retriever
+            try:
+                schema_snippets = fetch_schema()
+                retriever = SchemaRetriever(schema_snippets)
+                app_logger.info(f"Schema fetched with {len(schema_snippets)} tables for query processing")
+            except Exception as schema_error:
+                app_logger.error(f"Error fetching schema: {str(schema_error)}")
+                return {
+                    "sql": None,
+                    "result": None,
+                    "natural_response": f"Database connection error: Unable to fetch schema information. Please check database connectivity. Error: {str(schema_error)}"
+                }
+            
+            # 2. Retrieve relevant schema (RAG)
+            relevant_schema = retriever.retrieve(user_query, k=3)
             app_logger.debug(f"Retrieved relevant schema: {relevant_schema[:100]}...")
             
-            # 2. Get Time Context
+            # 3. Get Time Context
             time_context = get_time_context()
             app_logger.debug("Time context retrieved")
             
-            # 3. Generate SQL
+            # 4. Generate SQL
             sql = generate_sql(user_query, relevant_schema, time_context)
             app_logger.info(f"Generated SQL: {sql[:100]}...")
             
-            # 4. Handle non-SQL outputs
+            # 5. Handle non-SQL outputs
             if sql == "__NEED_CLARIFICATION__":
                 app_logger.info("Query needs clarification")
                 return {
@@ -62,7 +74,7 @@ class QueryController:
                     "natural_response": "This question does not seem to be related to the available business data."
                 }
                 
-            # 5. SQL Safety Guard
+            # 6. SQL Safety Guard
             is_safe, message = validate_sql(sql)
             if not is_safe:
                 app_logger.warning(f"SQL validation failed: {message}")
@@ -72,7 +84,7 @@ class QueryController:
                     "natural_response": f"Safety Block: {message}. Query attempt: {sql}"
                 }
                 
-            # 6. Execute SQL
+            # 7. Execute SQL
             try:
                 db_result = execute_query(sql)
                 app_logger.info("SQL query executed successfully")
@@ -84,7 +96,7 @@ class QueryController:
                     "natural_response": f"Execution Error: {str(e)}"
                 }
                 
-            # 7. Generate Response
+            # 8. Generate Response
             natural_response = generate_natural_response(user_query, sql, db_result)
             app_logger.info("Natural response generated successfully")
             

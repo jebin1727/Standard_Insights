@@ -21,6 +21,13 @@ class Settings:
         "OrderDetails": "data_so_details"
     }
     
+    # Common column name patterns that might exist in the database
+    COMMON_COLUMN_PATTERNS = {
+        "date_columns": ["created", "created_at", "date", "order_date", "so_date", "sos_date", "transaction_date", "updated", "updated_at"],
+        "id_columns": ["id", "_id", "pk", "so_id", "sos_id", "order_id", "client_id", "dci_id", "customer_id", "product_id", "sku_id"],
+        "amount_columns": ["total", "total_amount", "amount", "price", "cost", "value", "revenue", "sum", "quantity"]
+    }
+    
     ALLOWED_TABLES: List[str] = list(TABLE_MAPPING.values())
     
     

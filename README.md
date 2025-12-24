@@ -110,12 +110,28 @@ The system maps business concepts to the following database tables:
 
 ## How to Run
 1. Install dependencies: `pip install -r requirements.txt`
-2. Create/update `.env` with DB credentials and Groq API key (see `.env.example`).
+2. Create/update `.env` with DB credentials and Groq API key (see `.env.example`). For the UAT database:
+   ```
+   DB_HOST=IP
+   DB_USER=DB User
+   DB_PASSWORD=DB Pswd
+   DB_NAME=DB Name
+   DB_PORT=3306
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
 3. Start the server:
    ```bash
    python -m app.main
    ```
 4. Access docs at `http://localhost:8005/docs`.
+
+## Database Schema Information
+The application automatically fetches the database schema at startup, including:
+- Column names and data types
+- Nullability information
+- Primary and foreign key constraints
+
+This schema information is used by the RAG system to help the LLM generate accurate SQL queries with correct column names.
 
 ## Production Considerations
 - **Logging**: The application includes comprehensive logging in the `logs/` directory
